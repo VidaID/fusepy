@@ -13,7 +13,7 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from __future__ import print_function, absolute_import, division
+
 
 from ctypes import *
 from ctypes.util import find_library
@@ -42,9 +42,9 @@ except ImportError:
         return newfunc
 
 try:
-    basestring
+    str
 except NameError:
-    basestring = str
+    str = str
 
 _system = system()
 _machine = machine()
@@ -77,7 +77,7 @@ if _system == 'Darwin':
     _libfuse_path = (find_library('fuse4x') or find_library('osxfuse') or
                      find_library('fuse'))
 elif _system == 'Windows':
-    import _winreg as reg
+    import winreg as reg
     def Reg32GetValue(rootkey, keyname, valname):
         key, val = None, None
         try:
@@ -464,7 +464,7 @@ def time_of_timespec(ts):
     return ts.tv_sec + ts.tv_nsec / 10 ** 9
 
 def set_st_attrs(st, attrs):
-    for key, val in attrs.items():
+    for key, val in list(attrs.items()):
         if key in ('st_atime', 'st_mtime', 'st_ctime', 'st_birthtime'):
             timespec = getattr(st, key + 'spec', None)
             if timespec is None:
@@ -571,7 +571,7 @@ class FUSE(object):
 
     @staticmethod
     def _normalize_fuse_options(**kargs):
-        for key, value in kargs.items():
+        for key, value in list(kargs.items()):
             if isinstance(value, bool):
                 if value is True: yield key
             else:
@@ -696,7 +696,7 @@ class FUSE(object):
     def statfs(self, path, buf):
         stv = buf.contents
         attrs = self.operations('statfs', path.decode(self.encoding))
-        for key, val in attrs.items():
+        for key, val in list(attrs.items()):
             if hasattr(stv, key):
                 setattr(stv, key, val)
 
@@ -782,7 +782,7 @@ class FUSE(object):
         for item in self.operations('readdir', self._decode_optional_path(path),
                                                fip.contents.fh):
 
-            if isinstance(item, basestring):
+            if isinstance(item, str):
                 name, st, offset = item, None, 0
             else:
                 name, attrs, offset = item
