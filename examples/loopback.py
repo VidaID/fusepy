@@ -97,7 +97,7 @@ class Loopback(LoggingMixIn, Operations):
 
 if __name__ == '__main__':
     if len(argv) != 3:
-        print(('usage: %s <root> <mountpoint>' % argv[0]))
+        print('usage: %s <root> <mountpoint>' % argv[0])
         exit(1)
 
     logging.basicConfig(level=logging.DEBUG)

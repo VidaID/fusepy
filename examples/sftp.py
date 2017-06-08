@@ -91,7 +91,7 @@ class SFTP(LoggingMixIn, Operations):
 
 if __name__ == '__main__':
     if len(argv) != 3:
-        print(('usage: %s <host> <mountpoint>' % argv[0]))
+        print('usage: %s <host> <mountpoint>' % argv[0])
         exit(1)
 
     logging.basicConfig(level=logging.DEBUG)

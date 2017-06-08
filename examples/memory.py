@@ -60,7 +60,7 @@ class Memory(LoggingMixIn, Operations):
 
     def listxattr(self, path):
         attrs = self.files[path].get('attrs', {})
-        return list(attrs.keys())
+        return attrs.keys()
 
     def mkdir(self, path, mode):
         uid, gid, pid = fuse_get_context()
@@ -79,7 +79,7 @@ class Memory(LoggingMixIn, Operations):
         return self.data[path][offset:offset + size]
 
     def readdir(self, path, fh):
-        return ['.', '..'] + [(x[1:], s, 0) for x, s in list(self.files.items()) if x != '/']
+        return ['.', '..'] + [(x[1:], s, 0) for x, s in self.files.items() if x != '/']
 
     def readlink(self, path):
         return self.data[path]
@@ -134,7 +134,7 @@ class Memory(LoggingMixIn, Operations):
 
 if __name__ == '__main__':
     if len(argv) != 2:
-        print(('usage: %s <mountpoint>' % argv[0]))
+        print('usage: %s <mountpoint>' % argv[0])
         exit(1)
 
     logging.basicConfig(level=logging.DEBUG)
