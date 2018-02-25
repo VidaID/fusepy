@@ -298,8 +298,7 @@ elif _system == 'Windows' or _system.startswith('CYGWIN'):
         ('st_ctimespec', c_timespec),
         ('st_blksize', c_int),
         ('st_blocks', c_longlong),
-        ('st_birthtimespec', c_timespec),
-        ('st_flags', c_uint32)]
+        ('st_birthtimespec', c_timespec)]
 else:
     raise NotImplementedError('%s is not supported.' % _system)
 
@@ -453,25 +452,6 @@ class fuse_operations(Structure):
         ('flag_nopath', c_uint, 1),
         ('flag_utime_omit_ok', c_uint, 1),
         ('flag_reserved', c_uint, 29),
-        ('ioctl', c_voidp),
-        ('poll', c_voidp),
-        ('write_buf', c_voidp),
-        ('read_buf', c_voidp),
-        ('flock', c_voidp),
-        ('fallocate', c_voidp),
-        ('reserved00', c_voidp),
-        ('reserved01', c_voidp),
-        ('reserved02', c_voidp),
-        ('statfs_x', c_voidp),
-        ('setvolname', c_voidp),
-        ('exchange', c_voidp),
-        ('getxtimes', c_voidp),
-        ('setbkuptime', c_voidp),
-        ('setchgtime', c_voidp),
-        ('setcrtime', c_voidp),
-        ('chflags', CFUNCTYPE(c_int, c_char_p, c_uint32)),
-        ('setattr_x', c_voidp),
-        ('fsetattr_x', c_voidp),
     ]
 
 
@@ -488,6 +468,37 @@ def set_st_attrs(st, attrs):
             timespec.tv_nsec = int((val - timespec.tv_sec) * 10 ** 9)
         elif hasattr(st, key):
             setattr(st, key, val)
+
+def windows_try_stat_ex():
+    if _system == 'Windows':
+        target_version = 0x00010002 # v1.2
+        version = c_uint32()
+        _libfuse.FspVersion(byref(version))
+        if version >= target_version:
+            c_stat._fields_.append(('st_flags', c_uint32))
+            fuse_operations._fields_ += [
+                ('ioctl', c_voidp),
+                ('poll', c_voidp),
+                ('write_buf', c_voidp),
+                ('read_buf', c_voidp),
+                ('flock', c_voidp),
+                ('fallocate', c_voidp),
+                ('reserved00', c_voidp),
+                ('reserved01', c_voidp),
+                ('reserved02', c_voidp),
+                ('statfs_x', c_voidp),
+                ('setvolname', c_voidp),
+                ('exchange', c_voidp),
+                ('getxtimes', c_voidp),
+                ('setbkuptime', c_voidp),
+                ('setchgtime', c_voidp),
+                ('setcrtime', c_voidp),
+                ('chflags', CFUNCTYPE(c_int, c_char_p, c_uint32)),
+                ('setattr_x', c_voidp),
+                ('fsetattr_x', c_voidp),
+            ]
+            return True
+    return False
 
 
 def fuse_get_context():
@@ -531,6 +542,8 @@ class FUSE(object):
         self.raw_fi = raw_fi
         self.encoding = encoding
 
+        do_stat_ex = kwargs.pop("stat_ex", False) and windows_try_stat_ex()
+
         # WinFsp (and OSX) specific extensions:
         #     FSP_FUSE_CAP_READDIR_PLUS     (1 << 21)   supports enhanced readdir
         #     FSP_FUSE_CAP_CASE_INSENSITIVE (1 << 29)   is case insensitive (OSX)
@@ -538,7 +551,7 @@ class FUSE(object):
         self.conn_want = \
             ((1 << 29) if kwargs.pop("case_insensitive", False) else 0) |\
             ((1 << 21) if kwargs.pop("readdir_plus", False) else 0) |\
-            ((1 << 23) if kwargs.pop("stat_ex", False) else 0)
+            ((1 << 23) if do_stat_ex else 0)
 
         args = ['fuse']
 
